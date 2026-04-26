@@ -1,0 +1,46 @@
+name: MLOps CI Pipeline
+
+on:
+  push:
+    paths:
+      - '**.py'
+      - 'Makefile'
+      - 'requirements.txt'
+      - '**.csv'
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Format check (black)
+        run: black model_pipeline.py main.py app.py --check
+
+      - name: Lint (flake8)
+        run: flake8 model_pipeline.py main.py app.py --max-line-length=100
+
+      - name: Security (bandit)
+        run: bandit -r model_pipeline.py main.py app.py -ll
+
+      - name: Prepare data
+        run: python main.py --step prepare --data titanic.csv
+
+      - name: Train model
+        run: python main.py --step train --data titanic.csv --model model.pkl
+
+      - name: Evaluate model
+        run: python main.py --step evaluate --data titanic.csv --model model.pkl
+
+      - name: Run tests
+        run: pytest tests/ -v
