@@ -1,0 +1,9 @@
+venv/
+__pycache__/
+*.pkl
+mlruns/
+mlflow.db
+.pytest_cache/
+*.pyc
+*.db
+tests/__pycache__/
