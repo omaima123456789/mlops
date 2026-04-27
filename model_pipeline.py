@@ -4,7 +4,26 @@ from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.svm import SVC
 import joblib
 import os
-
+from elasticsearch import Elasticsearch
+from datetime import datetime
+def log_to_elasticsearch(kernel, C, accuracy):
+    """
+    Envoie les métriques vers Elasticsearch.
+    """
+    try:
+        es = Elasticsearch("http://localhost:9200")
+        doc = {
+            "timestamp": datetime.now().isoformat(),
+            "kernel": kernel,
+            "C": C,
+            "accuracy": accuracy,
+            "model_type": "SVM",
+            "dataset": "Titanic"
+        }
+        es.index(index="mlflow-metrics", body=doc)
+        print("Métriques envoyées vers Elasticsearch ✅")
+    except Exception as e:
+        print(f"Elasticsearch non disponible : {e}")
 
 def prepare_data(path):
     """

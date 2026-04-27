@@ -8,3 +8,5 @@ fastapi
 uvicorn
 mlflow
 pytest
+
+elasticsearch

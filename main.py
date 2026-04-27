@@ -8,6 +8,7 @@ from model_pipeline import (
     evaluate_model,
     save_model,
     load_model,
+    log_to_elasticsearch,
 )
 
 # ── Configuration MLflow avec backend SQLite (Excellence Atelier 5) ──
@@ -32,11 +33,9 @@ def main():
     print(f"  ETAPE : {args.step.upper()}")
     print("=" * 50)
 
-    # Nom du run lisible dans l'interface MLflow (Excellence)
     run_name = f"svm_{args.kernel}_C{args.C}"
 
     with mlflow.start_run(run_name=run_name):
-        # Tags pour organiser les runs (Excellence)
         mlflow.set_tag("model_type", "SVM")
         mlflow.set_tag("dataset", "Titanic")
         mlflow.set_tag("step", args.step)
@@ -48,13 +47,16 @@ def main():
             model = train_model(X_train, y_train, kernel=args.kernel, C=args.C)
             score = evaluate_model(model, X_test, y_test)
 
-            # Log MLflow ici uniquement (pas dans model_pipeline)
+            # Log MLflow
             mlflow.log_param("kernel", args.kernel)
             mlflow.log_param("C", args.C)
             mlflow.log_param("test_size", 0.2)
             mlflow.log_param("random_state", 42)
             mlflow.log_metric("accuracy", score)
             mlflow.sklearn.log_model(model, "model")
+
+            # ── Envoi vers Elasticsearch (Atelier 7) ──────────
+            log_to_elasticsearch(args.kernel, args.C, score)
 
             save_model(model, args.model)
             print(f"Accuracy : {score:.4f}")
@@ -63,6 +65,7 @@ def main():
             model = load_model(args.model)
             score = evaluate_model(model, X_test, y_test)
             mlflow.log_metric("accuracy", score)
+            log_to_elasticsearch(args.kernel, args.C, score)
             print(f"Accuracy : {score:.4f}")
 
         if args.step == "load":
